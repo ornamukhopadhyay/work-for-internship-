@@ -66,10 +66,13 @@ def draw_vector(v0, v1, ax=None):
 # so that the data is scaled to a particular range. This allows for the program 
 # to perform better. 
 # =============================================================================
-    
+ 
+cols2skip = [0]
+cols = [i for i in range(21) if i not in cols2skip]
+
 #read data
-df_tumor = pd.read_excel("C:/Users/arpic/tumor100.xlsx", header = None, skiprows = [0,1045], sheet_name="tumor")
-df_normal = pd.read_excel("C:/Users/arpic/tumor100.xlsx", header = None, skiprows = [0,1045], sheet_name="normal")
+df_tumor = pd.read_excel("C:/Users/arpic/tumor100.xlsx", header = None, usecols=cols, skiprows = [0,1045], sheet_name="tumor")
+df_normal = pd.read_excel("C:/Users/arpic/tumor100.xlsx", header = None, usecols=cols, skiprows = [0,1045], sheet_name="normal")
 
 df_tumor_num = df_tumor.select_dtypes(include= ['number'])
 tumor_numpy = df_tumor_num.to_numpy()
