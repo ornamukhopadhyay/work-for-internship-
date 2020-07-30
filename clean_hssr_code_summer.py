@@ -1,3 +1,4 @@
+
 # -*- coding: utf-8 -*-
 """
 Created on Tue Jul 28 11:38:27 2020
@@ -11,32 +12,30 @@ import pandas as pd
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.decomposition import PCA 
-#from matplotlib import pyplot as plt
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 import seaborn as sns; sns.set()
 from sklearn import svm
 from sklearn.model_selection import GridSearchCV
-#from scipy.misc import imresize
 # from sklearn.linear_model import LogisticRegression
 from sklearn.linear_model import LogisticRegressionCV
 #from sklearn.metrics import classification_report
-# from sklearn.multiclass import OneVsRestClassifier
 #from sklearn.metrics import plot_confusion_matrix
 #from sklearn.metrics import plot_roc_curve
 from sklearn.metrics import roc_curve
 # from sklearn.metrics import accuracy_score
 # from sklearn.preprocessing import label_binarize
 from sklearn.metrics import auc
-# from sklearn.svm import SVC 
+from sklearn.svm import SVC 
 from sklearn.model_selection import train_test_split
-# import time
+from sklearn import metrics 
+import time
 # import math
 #import plotly.offline as py
 #from plotly.graph_objs import Scatter, Layout
 # plotly.graph_objs as go
 
-
-
+starting = time.time()
 
 # =============================================================================
 # We use np.random.seed(44) to choose a pseudo-random number for the program.
@@ -66,14 +65,15 @@ def draw_vector(v0, v1, ax=None):
 # so that the data is scaled to a particular range. This allows for the program 
 # to perform better. 
 # =============================================================================
- 
+
+
 cols2skip = [0]
 cols = [i for i in range(21) if i not in cols2skip]
 
 #read data
-df_tumor = pd.read_excel("C:/Users/arpic/tumor100.xlsx", header = None, usecols=cols, skiprows = [0,1045], sheet_name="tumor")
+df_tumor = pd.read_excel("C:/Users/arpic/tumor100.xlsx", header = None, usecols= cols, skiprows = [0,1045], sheet_name="tumor")
 df_normal = pd.read_excel("C:/Users/arpic/tumor100.xlsx", header = None, usecols=cols, skiprows = [0,1045], sheet_name="normal")
-
+#print(df_tumor)
 df_tumor_num = df_tumor.select_dtypes(include= ['number'])
 tumor_numpy = df_tumor_num.to_numpy()
 scaler_t = MinMaxScaler()
@@ -107,7 +107,7 @@ to_pca= np.concatenate((tumor_numpy_scaled, normal_numpy_scaled))
 
 #Do the PCA with 6 Dimensions 
 print(to_pca.shape, "this is the dimensionality of the PCA code")
-pca = PCA(n_components = 6)
+pca = PCA(n_components = 7)
 pca_data = pca.fit_transform(to_pca)
 print(pca.explained_variance_ratio_, "this is the variance ratio")
 
@@ -127,9 +127,21 @@ print("pca data", pca_data)
 # PCA graph. We then implement the axes and work on fine tuning the labels.
 # =============================================================================
 
+print(pca_data.shape, "pca data shape")
+
+xt = pca_data[0:1043, 0]
+yt = pca_data[0:1043, 1]
+zt = pca_data[0:1043, 2]
+
+xn = pca_data[1044:2087, 0]
+yn = pca_data[1044:2087, 1]
+zn = pca_data[1044:2087, 2]
+
 fig = plt.figure()
 ax1 = fig.add_subplot(111, projection='3d')
-ax1.scatter(pca_data[:, 0], pca_data[:, 1], pca_data[:,2], alpha=0.3, color = "orange")
+ax1.scatter(xt,yt,zt, alpha=0.3, color = "orange")
+ax1.scatter(xn,yn,zn, alpha=0.3, color="green")
+ax1.legend()
 for length, vector in zip(pca.explained_variance_, pca.components_):
     v = vector * 3 * np.sqrt(length)
     draw_vector(pca.mean_, pca.mean_ + v)
@@ -152,6 +164,8 @@ ax1.zaxis.pane.set_edgecolor('w')
 ax1.set_xlabel("first PC", fontsize = "9")
 ax1.set_ylabel("second PC", fontsize="9")
 ax1.set_zlabel("third PC", fontsize="9")
+
+ax1.legend(loc="lower left", labels={"tumor": "orange", "normal":"green"})
 
 ax1.set_title("PCA Scatterplot Post-Combination of Tumor and Normal Data", 
               fontsize=12, fontweight="bold")
@@ -188,7 +202,7 @@ print(Y_test.shape)
 print("setting up logistic regression")
 clf = LogisticRegressionCV(cv = 5,random_state=0).fit(X_train, np.ravel(Y_train))
 clf.predict(X_test)
-print(clf.predict_proba(X_test).shape)
+#print(clf.predict_proba(X_test).shape)
 
 print("accuracy is", clf.score(X_test, np.ravel(Y_test)))
 
@@ -222,6 +236,8 @@ plt.show()
 # plt.plot(fpr_lr, tpr_lr, label='Logistic Regression')
 
 
+
+
 # =============================================================================
 # We use Support Vector Machine's classifier function in order to test
 # another classification. We first create a variable with the function inputted,
@@ -239,7 +255,9 @@ clf_svm = GridSearchCV(svr, parameters)
 clf_svm.fit(X_train, np.ravel(Y_train))
 print("SVM accuracy is",clf_svm.score(X_test,np.ravel(Y_test)))
 
-
+# =============================================================================
+# Now, we create the ROC Curve for the SVM plot. 
+# =============================================================================
 
 
 y_pred_svm = clf_svm.predict_proba(X_test)[:,1]
@@ -261,4 +279,7 @@ plt.title('ROC Curve for SVM')
 plt.legend(loc="lower right")
 plt.show()
 
+endtime = time.time()
+
+print("time", endtime-starting)
 
